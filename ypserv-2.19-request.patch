@@ -1,0 +1,41 @@
+diff -up ypserv-2.19/rpc.yppasswdd/update.c.request ypserv-2.19/rpc.yppasswdd/update.c
+--- ypserv-2.19/rpc.yppasswdd/update.c.request	2011-08-31 15:19:05.965231459 +0200
++++ ypserv-2.19/rpc.yppasswdd/update.c	2011-08-31 15:34:39.432222557 +0200
+@@ -814,6 +814,27 @@ external_update_env (yppasswd *yppw)
+  *
+  *===============================================================*/
+ 
++static void
++remove_password (char *str)
++{
++  char *ptr = strstr (str, " o:");
++
++  if (ptr != NULL)
++    {
++      ptr+=3;
++      while (*ptr && *ptr != ' ')
++	*ptr++ = 'X';
++    }
++
++  ptr = strstr (str, " p:");
++  if (ptr != NULL)
++    {
++      ptr+=3;
++      while (*ptr && *ptr != ' ')
++	*ptr++ = 'X';
++    }
++}
++
+ static int
+ external_update_pipe (yppasswd *yppw)
+ {
+@@ -996,6 +1017,9 @@ external_update_pipe (yppasswd *yppw)
+     }
+   fclose(fp);
+ 
++  if (!debug_flag)
++    remove_password (parentmsg);
++
+   if (strspn(childresponse, "OK") < 2)
+     {
+       log_msg ("%s failed.  Change request: %s", logbuf, parentmsg);

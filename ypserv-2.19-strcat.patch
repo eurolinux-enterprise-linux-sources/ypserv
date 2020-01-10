@@ -1,0 +1,43 @@
+diff -up ypserv-2.19/rpc.yppasswdd/update.c.strcat ypserv-2.19/rpc.yppasswdd/update.c
+--- ypserv-2.19/rpc.yppasswdd/update.c.strcat	2011-08-30 09:34:54.837252378 +0200
++++ ypserv-2.19/rpc.yppasswdd/update.c	2011-08-30 09:35:41.735251931 +0200
+@@ -840,6 +840,8 @@ external_update_pipe (yppasswd *yppw)
+       log_msg ("rpc.yppasswdd: out of memory");
+       return res;
+     }
++  logbuf[0] = '\0';
++  
+   /*
+    * determine what information we have to change
+    */
+@@ -949,7 +951,7 @@ external_update_pipe (yppasswd *yppw)
+       return res;
+     }
+ 
+-  strcat (parentmsg, yppw->newpw.pw_name);
++  strcpy (parentmsg, yppw->newpw.pw_name);
+   strcat (parentmsg, " o:");
+   strcat (parentmsg, yppw->oldpass);
+   strcat (parentmsg, " ");
+@@ -981,7 +983,6 @@ external_update_pipe (yppasswd *yppw)
+   fp = fdopen(tochildpipe[1], "w");
+   fprintf(fp, "%s\n", parentmsg);
+   fclose(fp);
+-  free (parentmsg);
+ 
+   /*
+    * get output from the child
+@@ -999,11 +1000,13 @@ external_update_pipe (yppasswd *yppw)
+     {
+       log_msg ("%s failed.  Change request: %s", logbuf, parentmsg);
+       log_msg ("Response was %s", childresponse);
++      free (parentmsg);
+       return res;
+     }
+ 
+   log_msg ("%s successful. Change request: %s", logbuf, parentmsg);
+ 
++  free (parentmsg);
+   res = 0;
+ 
+   return res;

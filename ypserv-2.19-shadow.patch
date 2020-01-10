@@ -1,0 +1,133 @@
+diff -up ypserv-2.19/rpc.yppasswdd/update.c.shadow ypserv-2.19/rpc.yppasswdd/update.c
+--- ypserv-2.19/rpc.yppasswdd/update.c.shadow	2006-01-10 20:22:20.000000000 +0100
++++ ypserv-2.19/rpc.yppasswdd/update.c	2011-08-12 11:59:29.316109872 +0200
+@@ -79,6 +79,8 @@ char *path_shadow_old = NULL;
+ /* Will be set by the main function */
+ char *external_update_program = NULL;
+ 
++static bool_t adjuct_used = FALSE;
++
+ static int external_update_env (yppasswd *yppw);
+ static int external_update_pipe (yppasswd *yppw);
+ static int update_files (yppasswd *yppw, char *logbuf, int *shadow_changed,
+@@ -142,6 +144,76 @@ shell_ok (char *shell)
+   return 0;
+ }
+ 
++/* Read shadow file manually, to handle different colons count. 
++   When we use passwd.adjunct, shadow file contains 6 colons, but if 
++   we don't use passwd.adjunct, shadow file contains 8 colons. 
++   This function can handle both counts, but fgetspent doesn't */
++static struct spwd *
++fgetspent_adjunct(FILE *fp) 
++{
++  static char line_buffer[1024];
++  char *buffer_mark;
++  struct spwd* result;
++  int i, colons = 0;
++  
++  /* Reserve two bytes for theoretic colons */
++  while (fgets(line_buffer, sizeof(line_buffer) - 2, fp) != NULL) 
++    {
++      /* We don't need a new line character in the end */
++      if ((buffer_mark = strchr(line_buffer, '\n')) != NULL)
++          buffer_mark[0] = '\0';
++        
++      /* Skip commented or empty lines */
++      if (line_buffer[0] == '\0' || line_buffer[0] == '#')
++        continue;
++
++      /* Count number of colons in the line */
++      for (i = 0; line_buffer[i] != '\0'; ++i) 
++          if (line_buffer[i] == ':')
++            ++colons;
++        
++      /* When we use passwd.adjunct, shadow file contains 6 colons, 
++         but we need 8 colons to properly parse the line, so we
++         just add two colons to the end of the line */
++      if (colons == 6) 
++        {
++          strcat(line_buffer, "::");
++          adjuct_used = TRUE;
++        }
++
++      /* Try to parse the line, if not success, read the next line */
++      if (result = sgetspent(line_buffer)) 
++        return result;
++    
++    }
++  return NULL;
++}
++
++/* Write an entry to the given stream.
++   When we use passwd.adjunct, shadow file contains 6 colons, but if 
++   we don't use passwd.adjunct, shadow file contains 8 colons. 
++   This function can handle both counts, but putspent doesn't  */
++static int
++putspent_adjunct (const struct spwd *p, FILE *stream)
++{
++  if (!adjuct_used)
++    return putspent(p, stream);
++
++  int errors = 0;
++
++  flockfile (stream);
++
++  if (fprintf (stream, "%s:%s:::::", p->sp_namp, p->sp_pwdp ? p->sp_pwdp : "") < 0)
++    ++errors;
++
++  if (putc_unlocked ('\n', stream) == EOF)
++    ++errors;
++
++  funlockfile (stream);
++
++  return errors ? -1 : 0;
++}
++
+ /* Check if the password the user supplied matches the old one */
+ static int
+ password_ok (char *plain, char *crypted, char *root)
+@@ -475,11 +547,12 @@ update_files (yppasswd *yppw, char *logb
+ 
+ 	  /* Check the password. At first check for a shadow password. */
+ 	  if (oldsf != NULL &&
+-	      pw->pw_passwd[0] == 'x' && pw->pw_passwd[1] == '\0')
++	      ((pw->pw_passwd[0] == 'x' && pw->pw_passwd[1] == '\0') || 
++              (pw->pw_passwd[0] == '#' && pw->pw_passwd[1] == '#')))
+ 	    {
+ #ifdef HAVE_GETSPNAM /* shadow password */
+ 	      /* Search for the shadow entry of this user */
+-	      while ((spw = fgetspent (oldsf)) != NULL)
++	      while ((spw = fgetspent_adjunct (oldsf)) != NULL)
+ 		{
+ 		  if (strcmp (yppw->newpw.pw_name, spw->sp_namp) == 0)
+ 		    {
+@@ -492,7 +565,7 @@ update_files (yppasswd *yppw, char *logb
+ 		      /* Password is ok, leave while loop */
+ 		      break;
+ 		    }
+-		  else if (putspent (spw, newsf) < 0)
++		  else if (putspent_adjunct (spw, newsf) < 0)
+ 		    {
+ 		      log_msg ("%s failed", logbuf);
+ 		      log_msg ("Error while writing new shadow file: %m");
+@@ -544,7 +617,7 @@ update_files (yppasswd *yppw, char *logb
+ 			  goto error;
+ 			}
+ 		    }
+-		  if (putspent (spw, newsf) < 0)
++		  if (putspent_adjunct (spw, newsf) < 0)
+ 		    {
+ 		      log_msg ("%s failed", logbuf);
+ 		      log_msg ("Error while writing new shadow file: %m");
+@@ -553,8 +626,8 @@ update_files (yppasswd *yppw, char *logb
+ 		    }
+ 
+ 		  /* Copy all missing entries */
+-		  while ((spw = fgetspent (oldsf)) != NULL)
+-		    if (putspent (spw, newsf) < 0)
++		  while ((spw = fgetspent_adjunct (oldsf)) != NULL)
++		    if (putspent_adjunct (spw, newsf) < 0)
+ 		      {
+ 			log_msg ("%s failed", logbuf);
+ 			log_msg ("Error while writing new shadow file: %m");
