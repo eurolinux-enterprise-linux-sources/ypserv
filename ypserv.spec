@@ -4,7 +4,7 @@ Summary: The NIS (Network Information Service) server
 Url: http://www.linux-nis.org/nis/ypserv/index.html
 Name: ypserv
 Version: 2.19
-Release: 31%{?dist}
+Release: 32%{?dist}
 License: GPLv2
 Group: System Environment/Daemons
 Source0: ftp://ftp.kernel.org/pub/linux/utils/net/NIS/ypserv-%{version}.tar.bz2
@@ -44,6 +44,7 @@ Patch21: ypserv-2.19-crypt.patch
 Patch22: ypserv-netidparse.patch
 Patch23: ypserv-2.19-nomap3.patch
 Patch24: ypserv-2.19-logs.patch
+Patch25: ypserv-2.19-ypchsh-adjunct.patch
 
 Obsoletes: yppasswd
 BuildRequires: gdbm-devel
@@ -91,6 +92,7 @@ machines.
 %patch22 -p1 -b .netidparse
 %patch23 -p1 -b .nomap3
 %patch24 -p1 -b .logs
+%patch25 -p1 -b .shell_adjunct
 
 %build
 cp etc/README etc/README.etc
@@ -180,6 +182,10 @@ exit 0
 %{_includedir}/*/*
 
 %changelog
+* Mon Sep 03 2018 Petr Kubat <pkubat@redhat.com> - 2.19-32
+- Do not overwrite user password in passwd.adjunct when changing shell
+- Resolves: #1614090
+
 * Fri Jan 15 2016 Matej Muzila <mmuzila@redhat.com> - 2.19-31
 - Return failure if yppassw cannot write to /etc/shadow or /etc/passwd.adjunct
   because of wrong SELinux context

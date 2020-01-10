@@ -1,0 +1,13 @@
+--- ypserv-2.19/rpc.yppasswdd/update.c	2018-08-22 12:28:08.745629282 +0200
++++ ypserv-2.19/rpc.yppasswdd/update.c	2018-08-22 12:28:36.424079754 +0200
+@@ -604,7 +604,9 @@
+ 	      !((yppw->newpw.pw_passwd[0] == 'x' ||
+ 		 yppw->newpw.pw_passwd[0] == '*') &&
+ 		yppw->newpw.pw_passwd[1] == '\0') &&
+-	      yppw->newpw.pw_passwd[0] != '\0')
++	      yppw->newpw.pw_passwd[0] != '\0' &&
++          !(yppw->newpw.pw_passwd[0] == '#' &&
++            yppw->newpw.pw_passwd[1] == '#'))
+ 	    {
+ #ifdef HAVE_GETSPNAM /* shadow password */
+ 	      if (spw)
