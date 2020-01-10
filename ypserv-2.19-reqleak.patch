@@ -1,0 +1,69 @@
+diff -up ypserv-2.19/rpc.yppasswdd/yppasswdd.c.leak ypserv-2.19/rpc.yppasswdd/yppasswdd.c
+--- ypserv-2.19/rpc.yppasswdd/yppasswdd.c.leak	2012-08-16 16:33:50.389586855 +0200
++++ ypserv-2.19/rpc.yppasswdd/yppasswdd.c	2012-08-16 16:33:58.621622828 +0200
+@@ -96,6 +96,13 @@ yppasswdprog_1 (struct svc_req *rqstp, S
+   memset ((char *) &argument, 0, sizeof (argument));
+   if (!svc_getargs (transp, xdr_argument, (caddr_t) &argument))
+     {
++      const struct sockaddr_in *sin = svc_getcaller (rqstp->rq_xprt);
++
++      log_msg ("cannot decode arguments for %d from %s",
++              rqstp->rq_proc, inet_ntoa (sin->sin_addr));
++      /* try to free already allocated memory during decoding */
++      svc_freeargs (transp, xdr_argument, (caddr_t) &argument);
++
+       svcerr_decode (transp);
+       return;
+     }
+diff -up ypserv-2.19/rpc.ypxfrd/ypxfrd_svc.c.leak ypserv-2.19/rpc.ypxfrd/ypxfrd_svc.c
+--- ypserv-2.19/rpc.ypxfrd/ypxfrd_svc.c.leak	2012-08-16 16:33:01.864384688 +0200
++++ ypserv-2.19/rpc.ypxfrd/ypxfrd_svc.c	2012-08-16 16:33:37.539531483 +0200
+@@ -90,6 +90,13 @@ ypxfrd_freebsd_prog_1 (struct svc_req *r
+   memset(&argument, 0, sizeof (argument));
+   if (!svc_getargs(transp, xdr_argument, (caddr_t) &argument))
+     {
++      const struct sockaddr_in *sin = svc_getcaller (rqstp->rq_xprt);
++
++      log_msg ("cannot decode arguments for %d from %s",
++              rqstp->rq_proc, inet_ntoa (sin->sin_addr));
++      /* try to free already allocated memory during decoding */
++      svc_freeargs (transp, xdr_argument, (caddr_t) &argument);
++
+       svcerr_decode(transp);
+       _rpcsvcdirty = 0;
+       return;
+diff -up ypserv-2.19/yppush/yppush.c.leak ypserv-2.19/yppush/yppush.c
+--- ypserv-2.19/yppush/yppush.c.leak	2012-08-16 16:31:31.841061912 +0200
++++ ypserv-2.19/yppush/yppush.c	2012-08-16 16:32:44.091315813 +0200
+@@ -196,6 +196,13 @@ yppush_xfrrespprog_1(struct svc_req *rqs
+   memset ((char *)&argument, 0, sizeof (argument));
+   if (!svc_getargs (transp, _xdr_argument, (caddr_t) &argument))
+     {
++      const struct sockaddr_in *sin = svc_getcaller (rqstp->rq_xprt);
++
++      log_msg ("cannot decode arguments for %d from %s",
++              rqstp->rq_proc, inet_ntoa (sin->sin_addr));
++      /* try to free already allocated memory during decoding */
++      svc_freeargs (transp, _xdr_argument, (caddr_t) &argument);
++
+       svcerr_decode (transp);
+       return;
+     }
+diff -up ypserv-2.19/ypserv/ypserv.c.leak ypserv-2.19/ypserv/ypserv.c
+--- ypserv-2.19/ypserv/ypserv.c.leak	2012-08-16 09:49:59.585503580 +0200
++++ ypserv-2.19/ypserv/ypserv.c	2012-08-16 16:38:43.387070146 +0200
+@@ -213,6 +213,14 @@ ypprog_2 (struct svc_req *rqstp, registe
+   memset ((char *) &argument, 0, sizeof (argument));
+   if (!svc_getargs (transp, _xdr_argument, (caddr_t) &argument))
+     {
++      const struct sockaddr_in *sin = svc_getcaller (rqstp->rq_xprt);
++
++      log_msg ("cannot decode arguments for %d from %s",
++	       rqstp->rq_proc, inet_ntoa (sin->sin_addr));
++      /* try to free already allocated memory during decoding.
++	 bnc#471924 */
++      svc_freeargs (transp, _xdr_argument, (caddr_t) &argument);
++
+       svcerr_decode (transp);
+       return;
+     }

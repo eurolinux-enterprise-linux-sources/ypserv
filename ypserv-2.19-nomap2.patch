@@ -1,0 +1,25 @@
+diff -up ypserv-2.19/ypserv/server.c.nomap2 ypserv-2.19/ypserv/server.c
+--- ypserv-2.19/ypserv/server.c.nomap2	2012-11-08 15:48:48.392019909 +0100
++++ ypserv-2.19/ypserv/server.c	2012-11-08 15:52:04.035175368 +0100
+@@ -802,7 +802,7 @@ ypproc_all_2_svc (ypreq_nokey *argp, ypr
+ 	case -1:
+ 	  if (debug_flag)
+ 	    log_msg ("\t-> Ignored (not a valid source host)");
+-	  result->ypresp_all_u.val.stat = YP_NOMAP;
++	  result->ypresp_all_u.val.stat = YP_YPERR;
+ 	  break;
+ 	case -2:
+ 	  if (debug_flag)
+@@ -813,6 +813,12 @@ ypproc_all_2_svc (ypreq_nokey *argp, ypr
+ 	  if (debug_flag)
+ 	    log_msg ("\t-> Ignored (not a valid domain)");
+ 	  result->ypresp_all_u.val.stat = YP_NODOM;
++	  break;
++	case -4:
++	  if (debug_flag)
++	    log_msg ("\t-> Ignored (no map)");
++	  result->ypresp_all_u.val.stat = YP_NOMAP;
++	  break;
+ 	}
+       return TRUE;
+     }

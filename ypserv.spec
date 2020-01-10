@@ -4,7 +4,7 @@ Summary: The NIS (Network Information Service) server
 Url: http://www.linux-nis.org/nis/ypserv/index.html
 Name: ypserv
 Version: 2.19
-Release: 22%{?dist}
+Release: 26%{?dist}
 License: GPLv2
 Group: System Environment/Daemons
 Source0: ftp://ftp.kernel.org/pub/linux/utils/net/NIS/ypserv-%{version}.tar.bz2
@@ -37,6 +37,10 @@ Patch14: ypserv-2.19-nodbclose.patch
 Patch15: ypserv-2.19-shadow.patch
 Patch16: ypserv-2.19-strcat.patch
 Patch17: ypserv-2.19-request.patch
+Patch18: ypserv-2.19-reqleak.patch
+Patch19: ypserv-2.19-nomap2.patch
+Patch20: ypserv-2.19-portmanfix.patch
+Patch21: ypserv-2.19-crypt.patch
 Obsoletes: yppasswd
 BuildRequires: gdbm-devel
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -76,6 +80,10 @@ machines.
 %patch15 -p1 -b .shadow
 %patch16 -p1 -b .strcat
 %patch17 -p1 -b .request
+%patch18 -p1 -b .reqleak
+%patch19 -p1 -b .nomap2
+%patch20 -p1 -b .portmanfix
+%patch21 -p1 -b .crypt
 
 %build
 cp etc/README etc/README.etc
@@ -161,6 +169,25 @@ exit 0
 %{_includedir}/*/*
 
 %changelog
+* Thu Nov 08 2012 Honza Horak <hhorak@redhat.com> - 2.19-26
+- Add missing breaks in switch
+  Resolves: #874557
+
+* Fri Oct 12 2012 Honza Horak <hhorak@redhat.com> - 2.19-25
+- Handle crypt() returning NULL in rpc.yppasswdd
+  Resolves: #816981
+
+* Mon Oct 09 2012 Honza Horak <hhorak@redhat.com> - 2.19-24
+- Add reference for how to specify options for yppush
+  Resolves: #863952
+
+* Mon Sep 17 2012 Honza Horak <hhorak@redhat.com> - 2.19-23
+- fix memory leak when malformed request is received
+  Resolves: #845283
+- Fixed returned value when all entries requested and no such
+  map exists
+  Resolves: #790812
+
 * Wed Aug 31 2011 Honza Horak <hhorak@redhat.com> - 2.19-22
 - hide passwords in syslog when using external script
   to update user's data using yppasswdd

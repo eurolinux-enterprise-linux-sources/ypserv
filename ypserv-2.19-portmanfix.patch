@@ -1,0 +1,17 @@
+diff -up ypserv-2.19/yppush/yppush.8.in.portmanfix ypserv-2.19/yppush/yppush.8.in
+--- ypserv-2.19/yppush/yppush.8.in.portmanfix	2011-06-14 16:02:55.637413461 +0200
++++ ypserv-2.19/yppush/yppush.8.in	2011-06-14 16:04:17.985413492 +0200
+@@ -54,6 +54,13 @@ with the information needed by the trans
+ to yppush, which may be printed the result to stderr. Messages are
+ also printed when a transfer is not possible; for instance when the request
+ message is undeliverable.
++
++To specify a port number or to use any other 
++.B yppush
++options you can edit 
++.I @YPMAPDIR@/Makefile
++directly.
++
+ .SH OPTIONS
+ .TP
+ .BI "\-d " domain
