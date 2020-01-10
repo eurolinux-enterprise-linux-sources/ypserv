@@ -4,7 +4,7 @@ Summary: The NIS (Network Information Service) server
 Url: http://www.linux-nis.org/nis/ypserv/index.html
 Name: ypserv
 Version: 2.19
-Release: 26%{?dist}
+Release: 26%{?dist}.2
 License: GPLv2
 Group: System Environment/Daemons
 Source0: ftp://ftp.kernel.org/pub/linux/utils/net/NIS/ypserv-%{version}.tar.bz2
@@ -134,6 +134,10 @@ rm -rf $RPM_BUILD_ROOT
 /sbin/chkconfig --add ypserv
 /sbin/chkconfig --add yppasswdd
 /sbin/chkconfig --add ypxfrd
+if [ -h /etc/rc2.d/S24ypbind ] || [ -h /etc/rc3.d/S24ypbind ] || \
+   [ -h /etc/rc4.d/S24ypbind ] || [ -h /etc/rc5.d/S24ypbind ] ; then
+	/sbin/chkconfig ypserv resetpriorities
+fi
 
 %preun
 if [ $1 = 0 ]; then
@@ -169,6 +173,13 @@ exit 0
 %{_includedir}/*/*
 
 %changelog
+* Tue Oct  1 2013 Honza Horak <hhorak@redhat.com> - 2.19-26.2
+- Run resetpriorities only when ypbind is broken
+  Resolves: #1011507
+
+* Tue Sep 24 2013 Tomas Hozza <thozza@redhat.com> - 2.19-26.1
+- Modify chkconfig priorities so ypserv starts before ypbind (#1011507)
+
 * Thu Nov 08 2012 Honza Horak <hhorak@redhat.com> - 2.19-26
 - Add missing breaks in switch
   Resolves: #874557

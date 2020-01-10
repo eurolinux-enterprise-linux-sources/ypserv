@@ -6,7 +6,7 @@
 #
 # Author:       Joerg Mertin <smurphy@stargate.bln.sub.org>
 #
-# chkconfig: - 26 74
+# chkconfig: - 23 77
 # description: ypserv is an implementation of the standard NIS/YP networking \
 #              protocol.  It allows network-wide distribution of hostname, \
 #              username, and other information databases. This is the NIS \
