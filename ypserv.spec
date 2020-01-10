@@ -4,7 +4,7 @@ Summary: The NIS (Network Information Service) server
 Url: http://www.linux-nis.org/nis/ypserv/index.html
 Name: ypserv
 Version: 2.19
-Release: 26%{?dist}.2
+Release: 31%{?dist}
 License: GPLv2
 Group: System Environment/Daemons
 Source0: ftp://ftp.kernel.org/pub/linux/utils/net/NIS/ypserv-%{version}.tar.bz2
@@ -41,6 +41,10 @@ Patch18: ypserv-2.19-reqleak.patch
 Patch19: ypserv-2.19-nomap2.patch
 Patch20: ypserv-2.19-portmanfix.patch
 Patch21: ypserv-2.19-crypt.patch
+Patch22: ypserv-netidparse.patch
+Patch23: ypserv-2.19-nomap3.patch
+Patch24: ypserv-2.19-logs.patch
+
 Obsoletes: yppasswd
 BuildRequires: gdbm-devel
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -84,6 +88,9 @@ machines.
 %patch19 -p1 -b .nomap2
 %patch20 -p1 -b .portmanfix
 %patch21 -p1 -b .crypt
+%patch22 -p1 -b .netidparse
+%patch23 -p1 -b .nomap3
+%patch24 -p1 -b .logs
 
 %build
 cp etc/README etc/README.etc
@@ -173,12 +180,28 @@ exit 0
 %{_includedir}/*/*
 
 %changelog
-* Tue Oct  1 2013 Honza Horak <hhorak@redhat.com> - 2.19-26.2
-- Run resetpriorities only when ypbind is broken
-  Resolves: #1011507
+* Fri Jan 15 2016 Matej Muzila <mmuzila@redhat.com> - 2.19-31
+- Return failure if yppassw cannot write to /etc/shadow or /etc/passwd.adjunct
+  because of wrong SELinux context
+- Move domainname check from ypserv to yppasswdd
+- Resolves: #747334, #456249
 
-* Tue Sep 24 2013 Tomas Hozza <thozza@redhat.com> - 2.19-26.1
-- Modify chkconfig priorities so ypserv starts before ypbind (#1011507)
+* Mon Nov 30 2015 Matej Muzila <mmuzila@redhat.com> - 2.19-30
+- Make server return YP_NOMAP when NIS client asks for non-existing map
+  using yp_first/yp_next RPC calls
+  Resolves: #988203
+
+* Fri Nov 27 2015 Matej Muzila <mmuzila@redhat.com> - 2.19-29
+- Make mknetid to handle properly files with either
+  empty lines or unexpected format
+  Resolves: #1071962
+
+* Tue Oct  1 2013 Honza Horak <hhorak@redhat.com> - 2.19-28
+- Run resetpriorities only when ypbind is broken
+  Resolves: #953555
+
+* Tue Sep 24 2013 Tomas Hozza <thozza@redhat.com> - 2.19-27
+- Modify chkconfig priorities so ypserv starts before ypbind (#953555)
 
 * Thu Nov 08 2012 Honza Horak <hhorak@redhat.com> - 2.19-26
 - Add missing breaks in switch
@@ -188,7 +211,7 @@ exit 0
 - Handle crypt() returning NULL in rpc.yppasswdd
   Resolves: #816981
 
-* Mon Oct 09 2012 Honza Horak <hhorak@redhat.com> - 2.19-24
+* Tue Oct 09 2012 Honza Horak <hhorak@redhat.com> - 2.19-24
 - Add reference for how to specify options for yppush
   Resolves: #863952
 

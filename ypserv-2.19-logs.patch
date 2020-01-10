@@ -1,0 +1,30 @@
+--- ypserv-2.19/rpc.yppasswdd/update.c	2011-10-19 13:28:47.851688303 +0200
++++ ypserv-2.19/rpc.yppasswdd/update.c	2011-10-19 13:35:14.633693732 +0200
+@@ -719,7 +719,12 @@ update_files (yppasswd *yppw, char *logb
+       if (link (path_shadow, path_shadow_old) == -1)
+ 	log_msg ("Cannot create backup file %s: %s",
+ 		 path_shadow_old, strerror (errno));
+-      rename (path_shadow_tmp, path_shadow);
++      if (rename (path_shadow_tmp, path_shadow) == -1) 
++        {
++          log_msg ("Cannot move temporary file %s to %s: %s",
++                 path_shadow_tmp, path_shadow, strerror (errno));
++          *shadow_changed = 0;
++        }
+     }
+   else
+     unlink (path_shadow_tmp);
+@@ -731,7 +736,12 @@ update_files (yppasswd *yppw, char *logb
+       if (link (path_passwd, path_passwd_old) == -1)
+ 	log_msg ("Cannot create backup file %s: %s",
+ 		 path_passwd_old, strerror (errno));
+-      rename (path_passwd_tmp, path_passwd);
++      if (rename (path_passwd_tmp, path_passwd) == -1)
++        {
++          log_msg ("Cannot move temporary file %s to %s: %s",
++                 path_passwd_tmp, path_passwd, strerror (errno));
++          *passwd_changed = 0;
++        }
+     }
+   else
+     unlink (path_passwd_tmp);

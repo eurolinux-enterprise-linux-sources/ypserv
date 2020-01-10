@@ -35,8 +35,6 @@ start() {
     if [ "$DOMAINNAME" = "(none)" -o "$DOMAINNAME" = "" ]; then
 	if [ -n "$NISDOMAIN" ]; then
 	    action $"Setting NIS domain name $NISDOMAIN: " domainname $NISDOMAIN
-	else
-	    exit 1
 	fi
     fi
     echo -n $"Starting YP server services: "

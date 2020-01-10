@@ -1,0 +1,98 @@
+--- ypserv-2.19/ypserv/server.c	2013-07-24 16:46:22.118317813 +0200
++++ ypserv-2.29/ypserv/server.c	2013-07-24 16:49:11.171234089 +0200
+@@ -76,6 +76,7 @@ ypproc_domain_2_svc (domainname *argp, b
+ 
+   switch (is_valid (rqstp, NULL, *argp))
+     {
++    case -4: /* -4 should not happen */
+     case -3:
+     case -2: /* -2 should not happen */
+       *result = FALSE;
+@@ -121,8 +122,9 @@ ypproc_domain_nonack_2_svc (domainname *
+         log_msg ("\t-> Ignored (not a valid domain)");
+       /* Bail out and don't return any RPC value */
+       return FALSE;
++    case -4: /* Should not happen */
+     case -2: /* Should not happen */
+-      log_msg ("Map name not valid, this cannot happen???");
++      log_msg ("Map name not valid/does not exist, this cannot happen???");
+       return FALSE;
+     case -1:
+       if (debug_flag)
+@@ -280,6 +282,11 @@ ypproc_first_2_svc (ypreq_nokey *argp, y
+             log_msg ("\t-> Ignored (not a valid domain)");
+           result->stat = YP_NODOM;
+ 	  break;
++	case -4:
++	  if (debug_flag)
++	    log_msg ("\t-> Ignored (map does not exist)");
++	  result->stat = YP_NOMAP;
++	  break;
+ 	case 0:
+ 	  if (debug_flag)
+ 	    log_msg ("\t-> Ignored (forbidden by securenets)");
+@@ -385,6 +392,11 @@ ypproc_next_2_svc (ypreq_key *argp, ypre
+             log_msg ("\t-> Ignored (not a valid domain)");
+           result->stat = YP_NODOM;
+ 	  break;
++	case -4:
++	  if (debug_flag)
++	    log_msg ("\t-> Ignored (map does not exist)");
++	  result->stat = YP_NOMAP;
++	  break;
+ 	case 0:
+ 	  if (debug_flag)
+ 	    log_msg ("\t-> Ignored (forbidden by securenets)");
+@@ -474,7 +486,7 @@ ypproc_xfr_2_svc (ypreq_xfr *argp, ypres
+   result->transid = argp->transid;
+ 
+   valid = is_valid (rqstp, argp->map_parms.map, argp->map_parms.domain);
+-  if (valid < 1)
++  if (valid < 1 && valid != -4) /* Map does not exist has a special meaning */
+     {
+       switch (valid)
+ 	{
+@@ -802,7 +824,7 @@ ypproc_all_2_svc (ypreq_nokey *argp, ypr
+ 	case -1:
+ 	  if (debug_flag)
+ 	    log_msg ("\t-> Ignored (not a valid source host)");
+-	  result->ypresp_all_u.val.stat = YP_YPERR;
++	  result->ypresp_all_u.val.stat = YP_NOMAP;
+ 	  break;
+ 	case -2:
+ 	  if (debug_flag)
+@@ -948,6 +972,11 @@ ypproc_master_2_svc (ypreq_nokey *argp,
+             log_msg ("\t-> Ignored (not a domain)");
+           result->stat = YP_NODOM;
+ 	  break;
++	case -4:
++	  if (debug_flag)
++	    log_msg ("\t-> Ignored (map does not exist)");
++	  result->stat = YP_NOMAP;
++	  break;
+ 	case 0:
+ 	  if (debug_flag)
+ 	    log_msg ("\t-> Ignored (forbidden by securenets)");
+@@ -1064,6 +1093,11 @@ ypproc_order_2_svc (ypreq_nokey *argp, y
+             log_msg ("\t-> Ignored (not a valid domain)");
+           result->stat = YP_NODOM;
+ 	  break;
++	case -4:
++	  if (debug_flag)
++	    log_msg ("\t-> Ignored (map does not exist)");
++	  result->stat = YP_NOMAP;
++	  break;
+ 	case 0:
+ 	  if (debug_flag)
+ 	    log_msg ("\t-> Ignored (forbidden by securenets)");
+@@ -1185,7 +1219,10 @@ ypproc_maplist_2_svc (domainname *argp,
+             log_msg ("\t-> Ignored (not a valid source host)");
+           result->stat = YP_NOMAP;
+ 	  break;
++	case -4: /* should never happen */
+ 	case -2: /* should never happen */
++	  result->stat = YP_NOMAP;
++	  break;
+ 	case -3:
+           if (debug_flag)
+             log_msg ("\t-> Ignored (not a valid domain)");

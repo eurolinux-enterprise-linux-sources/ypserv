@@ -44,6 +44,15 @@ if [ "$SHADOWFILE" ]; then
 fi
 
 start() {
+    DOMAINNAME=`domainname`
+    if [ "$DOMAINNAME" = "(none)" -o "$DOMAINNAME" = "" ]; then
+        if [ -n "$NISDOMAIN" ]; then
+            action $"Setting NIS domain name $NISDOMAIN: " domainname $NISDOMAIN
+        else
+            exit 1
+        fi
+    fi
+
     [ $UID -eq 0 ] || exit 4
     [ -x $exec ] || exit 5
     echo -n $"Starting YP passwd service: "
