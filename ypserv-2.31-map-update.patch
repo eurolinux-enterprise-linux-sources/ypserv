@@ -1,0 +1,16 @@
+https://github.com/thkukuk/ypserv/pull/2
+diff --git a/ypxfr/ypxfr.c b/ypxfr/ypxfr.c
+index 358ac8d..d44773b 100644
+--- a/ypxfr/ypxfr.c
++++ b/ypxfr/ypxfr.c
+@@ -517,8 +517,8 @@ ypxfr (char *map, char *source_host, char *source_domain, char *target_domain,
+   if (ypproc_order_2 (&req_nokey, &resp_order, clnt_udp) != RPC_SUCCESS)
+     {
+       log_msg (clnt_sperror (clnt_udp, "ypproc_order_2"));
+-      masterOrderNum = time (NULL); /* We set it to the current time.
+-                                       So a new map will be always newer. */
++      clnt_destroy (clnt_udp);
++      return YPXFR_YPERR;
+     }
+   else if (resp_order.stat != YP_TRUE)
+     {

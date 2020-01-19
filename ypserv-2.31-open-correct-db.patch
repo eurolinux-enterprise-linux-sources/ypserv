@@ -1,0 +1,14 @@
+https://github.com/thkukuk/ypserv/pull/3
+diff --git a/ypxfr/ypxfr.c b/ypxfr/ypxfr.c
+index d44773b..b2ad875 100644
+--- a/ypxfr/ypxfr.c
++++ b/ypxfr/ypxfr.c
+@@ -627,7 +627,7 @@ ypxfr (char *map, char *source_host, char *source_domain, char *target_domain,
+       dbm = dbm_open (dbName_temp, O_CREAT|O_RDWR, 0600);
+ #elif defined(HAVE_LIBTC)
+       dbm = tcbdbnew ();
+-      if (!tcbdbopen (dbm, dbName_orig, BDBOWRITER | BDBOCREAT | BDBOTRUNC))
++      if (!tcbdbopen (dbm, dbName_temp, BDBOWRITER | BDBOCREAT | BDBOTRUNC))
+         {
+           tcbdbdel (dbm);
+           dbm = NULL;

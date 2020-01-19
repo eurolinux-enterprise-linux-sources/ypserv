@@ -2,7 +2,7 @@ Summary: The NIS (Network Information Service) server
 Url: http://www.linux-nis.org/nis/ypserv/index.html
 Name: ypserv
 Version: 2.31
-Release: 8%{?dist}
+Release: 9%{?dist}
 License: GPLv2
 Group: System Environment/Daemons
 Source0: http://www.linux-nis.org/download/ypserv/ypserv-%{version}.tar.bz2
@@ -31,6 +31,8 @@ Patch9: ypserv-2.29-relro.patch
 Patch10: ypserv-2.31-netgrprecur.patch
 Patch11: ypserv-tcopenfail.patch
 Patch12: ypserv-minuid.patch
+Patch13: ypserv-2.31-map-update.patch
+Patch14: ypserv-2.31-open-correct-db.patch
 
 BuildRequires: tokyocabinet-devel
 BuildRequires: systemd
@@ -68,6 +70,8 @@ machines.
 %patch10 -p1 -b .netgrprecur
 %patch11 -p1 -b .tcopenfail
 %patch12 -p1 -b .minuid
+%patch13 -p1 -b .map-update
+%patch14 -p1 -b .open-correct-db
 
 autoreconf
 
@@ -157,6 +161,11 @@ install -m 755 %{SOURCE4} $RPM_BUILD_ROOT%{_libexecdir}/rpc.yppasswdd.env
 %{_includedir}/*/*
 
 %changelog
+* Wed Nov 30 2016 Matej Mužila <mmuzila@redhat.com> - 2.31-9
+- Do not update NIS map when master's version is older
+- Open correct _temporary_ db with tokyocabinet
+- Resolves #1305137, #1331882
+
 * Fri Jan 24 2014 Daniel Mach <dmach@redhat.com> - 2.31-8
 - Mass rebuild 2014-01-24
 
