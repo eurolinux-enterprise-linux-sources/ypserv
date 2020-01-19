@@ -1,0 +1,34 @@
+diff -up ./acinclude.m4.aliases ./acinclude.m4
+--- ./acinclude.m4.aliases	2005-04-07 14:38:44.000000000 +0200
++++ ./acinclude.m4	2013-05-06 18:32:54.423541141 +0200
+@@ -92,3 +92,18 @@ AC_DEFUN([TYPE_SOCKLEN_T],
+     AC_DEFINE([socklen_t], [int], [Define if socklen_t is missing])
+   fi
+ ])
++
++
++dnl
++dnl Find where aliases file is located
++dnl It can be in /etc/aliases or /etc/mail/aliases
++dnl If file path is specified in argument and file path exists, it is used.
++dnl 
++AC_DEFUN([FIND_ALIASES_PATH], [
++AC_MSG_CHECKING(for aliases file path)
++tmp_aliases="$1"
++test -f /etc/mail/aliases && tmp_aliases="/etc/mail/aliases"
++test -f /etc/aliases && tmp_aliases="/etc/aliases"
++AC_MSG_RESULT($tmp_aliases)
++AC_SUBST(ALIASES, $tmp_aliases)
++])
+diff -up ./configure.in.aliases ./configure.in
+--- ./configure.in.aliases	2013-04-11 11:26:22.000000000 +0200
++++ ./configure.in	2013-05-06 18:32:54.482541191 +0200
+@@ -151,7 +151,7 @@ fi
+ AC_SUBST(MAKE)
+ 
+ dnl Check for aliases path
+-AC_PATH_PROG(ALIASES, aliases, /etc/mail/aliases, /etc/mail:/etc)
++FIND_ALIASES_PATH(/etc/aliases)
+ 
+ 
+ 

@@ -1,0 +1,92 @@
+diff -up ./rpc.yppasswdd/rpc.yppasswdd.8.manfix ./rpc.yppasswdd/rpc.yppasswdd.8
+--- ./rpc.yppasswdd/rpc.yppasswdd.8.manfix	2013-04-10 10:30:53.000000000 +0200
++++ ./rpc.yppasswdd/rpc.yppasswdd.8	2013-05-06 18:32:35.682525532 +0200
+@@ -53,6 +53,15 @@ customized for that NIS domain\. If no s
+ \fBMakefile\fR
+ is found, the scripts uses the generic one in
+ \fI/var/yp\fR\.
++.PP
++It is possible to pass
++\fBOPTIONS\fR
++to 
++\fBrpc.yppasswdd\fR
++using the environment variable 
++YPPASSWDD_ARGS
++and this variable can be set in 
++\fB/etc/sysconfig/yppasswdd\fR\&.
+ .SH "OPTIONS"
+ .PP
+ The following options are available:
+@@ -186,6 +195,8 @@ version\ 3\. Better still, look at
+ \fI/etc/passwd\fR
+ 
+ \fI/etc/shadow\fR
++
++\fI/etc/sysconfig/yppasswdd\fR
+ .SH "SEE ALSO"
+ .PP
+ 
+diff -up ./rpc.ypxfrd/rpc.ypxfrd.8.manfix ./rpc.ypxfrd/rpc.ypxfrd.8
+--- ./rpc.ypxfrd/rpc.ypxfrd.8.manfix	2013-04-10 10:30:53.000000000 +0200
++++ ./rpc.ypxfrd/rpc.ypxfrd.8	2013-05-06 18:32:35.693525541 +0200
+@@ -47,6 +47,16 @@ could be started by inetd\. But since it
+ \fBypserv\fR
+ from
+ \fB/etc/init\.d/ypxfrd\fR\.
++
++It is possible to pass
++\fBOPTIONS\fR
++to 
++\fBrpc.ypxfrd\fR
++using the environment variable 
++YPXFRD_ARGS
++and this variable can be set in 
++\fB/etc/sysconfig/network\&.\fR
++
+ .SH "OPTIONS"
+ .PP
+ \fB\-\-debug\fR
+@@ -114,6 +124,12 @@ Configuration file for options and acces
+ .RS 4
+ Configuration file for access rights
+ .RE
++.PP
++\fI/etc/sysconfig/network\fR
++.RS 4
++Setting additional arguments to
++\fBrpc\.ypxfrd\fR\&.
++.RE
+ .SH "SEE ALSO"
+ .PP
+ 
+diff -up ./ypserv/ypserv.8.manfix ./ypserv/ypserv.8
+--- ./ypserv/ypserv.8.manfix	2013-04-10 10:30:53.000000000 +0200
++++ ./ypserv/ypserv.8	2013-05-06 18:32:35.705525551 +0200
+@@ -56,6 +56,14 @@ may or may not be running on the same no
+ \fBypserv\fR
+ parses the file
+ /etc/ypserv\&.conf\&.
++It is also possible to pass
++\fBOPTIONS\fR
++to 
++\fBypserv\fR
++using the environment variable 
++YPSERV_ARGS
++and this variable can be set in 
++\fB/etc/sysconfig/network\&.\fR
+ .SH "OPTIONS"
+ .PP
+ \fB\-d\fR, \fB\-\-debug
+@@ -149,6 +157,12 @@ configuration file\&.
+ which hosts are allowed to contact
+ \fBypserv\fR\&.
+ .RE
++.PP
++/etc/sysconfig/network
++.RS 4
++setting additional arguments to
++\fBypserv\fR\&.
++.RE
+ .SH "SEE ALSO"
+ .PP
+ \fBdomainname\fR(1),

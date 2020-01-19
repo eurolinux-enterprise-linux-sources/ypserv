@@ -1,0 +1,23 @@
+When tcbdbopen fails to open a database file wrong pointer is returned
+instead of NULL pointer.
+
+Patch by Edgar Hoch
+
+RHBZ#1004110
+
+--- ypserv-2.31/lib/yp_db.c.orig	2013-04-10 16:42:21.000000000 +0200
++++ ypserv-2.31/lib/yp_db.c	2013-09-04 02:38:04.515428554 +0200
+@@ -181,6 +181,12 @@ 
+       	}
+       else if (debug_flag)
+ 	log_msg ("\t\t->Returning OK!");
++      if ( !isok )
++	{
++	  /* DB not successful opened. Close database object and set return value to NULL. */
++	  tcbdbdel (dbp);
++	  dbp = NULL;
++	}
+     }
+   else
+     {
+

@@ -1,0 +1,28 @@
+MINUID and MINGID should match the values UID_MIN and GID_MIN in
+/etc/login.defs to be consistent and to not distribute uids and gids
+used by the linux system.
+
+However, we can't simply change values to 1000 since on upgraded systems
+that keep using UIDs 501+ and haven't changed /var/yp/Makefile, the Makefile
+would actually be updated and UIDs lower than 1000 won't be included in maps.
+
+Thus, we will read MINUID and MINGID values from /etc/login.defs
+
+RHBZ#1004090
+
+diff -up ypserv-2.31/scripts/ypMakefile.in.minuid ypserv-2.31/scripts/ypMakefile.in
+--- ypserv-2.31/scripts/ypMakefile.in.minuid	2013-09-04 13:29:12.294945130 +0200
++++ ypserv-2.31/scripts/ypMakefile.in	2013-09-04 13:31:07.308820321 +0200
+@@ -37,8 +37,10 @@ YPPUSH_ARGS =
+ # the passwd file. If no entry is found, this shadow entry is
+ # ignored.
+ # MINGID is the lowest gid that will be included in the group maps.
+-MINUID=500
+-MINGID=500
++# You can either set values directly (e.g. MINUID=1000) or pick up
++# current values from /etc/login.defs
++MINUID=$(shell TMP=`egrep '^UID_MIN\s+[0-9]+' /etc/login.defs|sed -e 's/^UID_MIN//'` ; [ -n "$$TMP" ] && echo "$$TMP" || echo 1000)
++MINGID=$(shell TMP=`egrep '^GID_MIN\s+[0-9]+' /etc/login.defs|sed -e 's/^GID_MIN//'` ; [ -n "$$TMP" ] && echo "$$TMP" || echo 1000)
+ 
+ # Don't export this uid/guid (nfsnobody).
+ # Set to 0 if you want to
