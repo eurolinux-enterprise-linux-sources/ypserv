@@ -1,0 +1,206 @@
+If selinux present, presserve selinux context for shadow and passwd file.
+
+--- ypserv-2.31/rpc.yppasswdd/Makefile.am.selinux-context	2016-01-25 15:39:35.038050672 +0100
++++ ypserv-2.31/rpc.yppasswdd/Makefile.am	2016-01-25 15:39:56.203036632 +0100
+@@ -26,7 +26,7 @@
+ 
+ rpc_yppasswdd_LDFLAGS = -Wl,-z,relro,-z,now
+ 
+-rpc_yppasswdd_LDADD =  @PIE_LDFLAGS@ $(top_builddir)/lib/libyp.a $(LIBDBM) $(LIBCRYPT) $(LIBSYSTEMD_DAEMON)
++rpc_yppasswdd_LDADD =  @PIE_LDFLAGS@ $(top_builddir)/lib/libyp.a $(LIBDBM) $(LIBCRYPT) $(LIBSYSTEMD_DAEMON) $(LIBSELINUX)
+ rpc_yppasswdd_CFLAGS = @PIE_CFLAGS@
+ 
+ if ENABLE_REGENERATE_MAN
+--- ypserv-2.31/configure.in.selinux-context.patch	2016-01-25 16:07:01.662180676 +0100
++++ ypserv-2.31/configure.in	2016-01-25 16:07:57.116157640 +0100
+@@ -243,6 +243,26 @@
+   echo ""
+   exit
+ fi
++AC_ARG_WITH(selinux,
++    [AC_HELP_STRING([--with-selinux@<:@=yes|no@:>@],[Enables SELinux support [no]])],
++
++  [ if test "$withval" = "yes"; then
++    AC_CHECK_HEADERS([selinux/selinux.h], [],
++        [AC_MSG_ERROR([Missing SELinux header files])])
++    AC_CHECK_LIB(selinux, setfilecon_raw, [],
++        [AC_MSG_ERROR([Missing or incorrect SELinux library])])
++    AC_CHECK_LIB(selinux, getfilecon_raw, [],
++        [AC_MSG_ERROR([Missing or incorrect SELinux library])])
++    AC_CHECK_LIB(selinux, freecon, [],
++          [AC_MSG_ERROR([Missing or incorrect SELinux library])])
++  fi
++ ],[])
++
++AC_SUBST(with_selinux)
++if test "$with_selinux" = "yes"; then
++      AC_DEFINE(WITH_SELINUX, 1, [Define to 1 if SELinux support is enabled])
++fi
++
+ 
+ AC_CHECK_LIB(xcrypt,crypt,LIBCRYPT="-lxcrypt",LIBCRYPT="")
+ if test -z "$LIBCRYPT" ; then
+--- ypserv-2.31/rpc.yppasswdd/update.c.selinux_context	2013-04-10 16:42:51.000000000 +0200
++++ ypserv-2.31/rpc.yppasswdd/update.c	2016-01-25 17:34:15.292146053 +0100
+@@ -42,6 +42,9 @@
+ #ifdef HAVE_SHADOW_H
+ #include <shadow.h>
+ #endif
++#ifdef WITH_SELINUX
++#include <selinux/selinux.h>
++#endif /* WITH_SELINUX */
+ #include "compat.h"
+ 
+ #ifndef CHECKROOT
+@@ -448,6 +451,9 @@ update_files (yppasswd *yppw, char *logb
+   FILE *oldpf = NULL, *newpf = NULL, *oldsf = NULL, *newsf = NULL;
+   struct stat passwd_stat, shadow_stat;
+   char *rootpass = "x";
++#ifdef WITH_SELINUX
++  char  *pSelCon = NULL;
++#endif /* WITH_SELINUX */
+ 
+ #if CHECKROOT
+   if ((pw = getpwnam ("root")) != NULL)
+@@ -489,6 +495,7 @@ update_files (yppasswd *yppw, char *logb
+       return 1;
+     }
+ 
++
+   /* Open a temp passwd file */
+   if ((newpf = fopen (path_passwd_tmp, "w+")) == NULL)
+     {
+@@ -497,6 +504,7 @@ update_files (yppasswd *yppw, char *logb
+       fclose (oldpf);
+       return 1;
+     }
++
+   chmod (path_passwd_tmp, passwd_stat.st_mode);
+   if (chown (path_passwd_tmp, passwd_stat.st_uid, passwd_stat.st_gid) == -1)
+     {
+@@ -507,42 +515,98 @@ update_files (yppasswd *yppw, char *logb
+       return 1;
+     }
+ 
++#ifdef WITH_SELINUX
++  /* Get selinux context of the original file */
++  if (getfilecon_raw(path_passwd, &pSelCon) < 0)
++    {
++      log_msg ("%s failed", logbuf);
++      log_msg ("Can't get selinux context %s: %m", path_passwd);
++      freecon(pSelCon);
++      fclose (oldpf);
++      fclose (newpf);
++      unlink (path_passwd_tmp);
++      return 1;
++    }
++
++  /* Set selinux context for tmp file */
++  if (setfilecon_raw(path_passwd_tmp, pSelCon))
++    {
++      log_msg ("%s failed", logbuf);
++      log_msg ("Can't set selinux context %s: %m", path_passwd_tmp);
++      freecon(pSelCon);
++      fclose (oldpf);
++      fclose (newpf);
++      unlink (path_passwd_tmp);
++      return 1;
++    }
++  freecon(pSelCon);
++  pSelCon=NULL;
++#endif /* WITH_SELINUX  */
++
+ #ifdef HAVE_GETSPNAM
+   /* Open the shadow file for reading. */
+   if ((oldsf = fopen (path_shadow, "r")) != NULL)
+     {
+       if (fstat (fileno (oldsf), &shadow_stat) < 0)
+-	{
+-	  log_msg ("%s failed", logbuf);
+-	  log_msg ("Can't stat %s: %m", path_shadow);
+-	  fclose (oldpf);
+-	  fclose (newpf);
+-	  fclose (oldsf);
+-	  return 1;
+-	}
++	    {
++	      log_msg ("%s failed", logbuf);
++	      log_msg ("Can't stat %s: %m", path_shadow);
++	      fclose (oldpf);
++	      fclose (newpf);
++	      fclose (oldsf);
++	      return 1;
++	    }
++
+ 
+       if ((newsf = fopen (path_shadow_tmp, "w+")) == NULL)
+-	{
+-	  int err = errno;
+-	  log_msg ("%s failed", logbuf);
+-	  log_msg ("Can't open %s.tmp: %s",
+-		   path_passwd, strerror (err));
+-	  fclose (oldsf);
+-	  fclose (newpf);
+-	  fclose (oldpf);
+-	  return 1;
+-	}
++	    {
++	      int err = errno;
++	      log_msg ("%s failed", logbuf);
++	      log_msg ("Can't open %s.tmp: %s",
++	    	   path_passwd, strerror (err));
++	      fclose (oldsf);
++	      fclose (newpf);
++	      fclose (oldpf);
++	      return 1;
++	    }
+       chmod (path_shadow_tmp, shadow_stat.st_mode);
+       if (chown (path_shadow_tmp, shadow_stat.st_uid,
+-		 shadow_stat.st_gid) == -1)
+-	{
+-	  log_msg ("chown failed", strerror (errno));
+-	  fclose (newsf);
+-	  fclose (oldsf);
+-	  fclose (newpf);
+-	  fclose (oldpf);
+-	  return 1;
+-	}
++	     shadow_stat.st_gid) == -1)
++	    {
++	      log_msg ("chown failed", strerror (errno));
++	      fclose (newsf);
++	      fclose (oldsf);
++	      fclose (newpf);
++	      fclose (oldpf);
++	      return 1;
++	    }
++#ifdef WITH_SELINUX
++      if (getfilecon_raw(path_shadow, &pSelCon) < 0)
++      {
++	      log_msg ("%s failed", logbuf);
++	      log_msg ("Can't get selinux context %s: %m", path_shadow);
++          freecon(pSelCon);
++	      fclose (newsf);
++	      fclose (oldsf);
++	      fclose (newpf);
++	      fclose (oldpf);
++	      return 1;
++      }
++      if (setfilecon_raw(path_shadow_tmp, pSelCon))
++	    {
++	      log_msg ("%s failed", logbuf);
++	      log_msg ("Can't set selinux context %s: %m", path_shadow_tmp);
++          freecon(pSelCon);
++	      fclose (newsf);
++	      fclose (oldsf);
++	      fclose (newpf);
++	      fclose (oldpf);
++	      return 1;
++	    }
++      freecon(pSelCon);
++      pSelCon=NULL;
++#endif /* WITH_SELINUX */
++
+     }
+ #endif /* HAVE_GETSPNAM */
+ 

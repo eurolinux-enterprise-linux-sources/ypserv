@@ -2,7 +2,7 @@ Summary: The NIS (Network Information Service) server
 Url: http://www.linux-nis.org/nis/ypserv/index.html
 Name: ypserv
 Version: 2.31
-Release: 9%{?dist}
+Release: 10%{?dist}
 License: GPLv2
 Group: System Environment/Daemons
 Source0: http://www.linux-nis.org/download/ypserv/ypserv-%{version}.tar.bz2
@@ -33,11 +33,13 @@ Patch11: ypserv-tcopenfail.patch
 Patch12: ypserv-minuid.patch
 Patch13: ypserv-2.31-map-update.patch
 Patch14: ypserv-2.31-open-correct-db.patch
+Patch15: ypserv-2.31-selinux-context.patch
 
 BuildRequires: tokyocabinet-devel
 BuildRequires: systemd
 BuildRequires: autoconf, automake
 BuildRequires: systemd-devel
+BuildRequires: libselinux-devel
 
 %description
 The Network Information Service (NIS) is a system that provides
@@ -72,6 +74,7 @@ machines.
 %patch12 -p1 -b .minuid
 %patch13 -p1 -b .map-update
 %patch14 -p1 -b .open-correct-db
+%patch15 -p1 -b .selinux-context
 
 autoreconf
 
@@ -86,7 +89,8 @@ export CFLAGS="$RPM_OPT_FLAGS -fpic"
 	--enable-checkroot \
 	--enable-fqdn \
 	--libexecdir=%{_libdir}/yp \
-	--with-dbmliborder=tokyocabinet
+	--with-dbmliborder=tokyocabinet \
+    --with-selinux=yes
 make
 
 %install
@@ -161,6 +165,10 @@ install -m 755 %{SOURCE4} $RPM_BUILD_ROOT%{_libexecdir}/rpc.yppasswdd.env
 %{_includedir}/*/*
 
 %changelog
+* Thu Jan 19 2017 Matej Mužila <mmuzila@redhat.com> - 2.31-10
+- rpc.yppasswd: presserve selinux context of shadow and passwd
+  Resolves: #1255583
+
 * Wed Nov 30 2016 Matej Mužila <mmuzila@redhat.com> - 2.31-9
 - Do not update NIS map when master's version is older
 - Open correct _temporary_ db with tokyocabinet
