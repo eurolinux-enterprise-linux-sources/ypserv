@@ -2,7 +2,7 @@ Summary: The NIS (Network Information Service) server
 Url: http://www.linux-nis.org/nis/ypserv/index.html
 Name: ypserv
 Version: 2.31
-Release: 11%{?dist}
+Release: 12%{?dist}
 License: GPLv2
 Group: System Environment/Daemons
 Source0: http://www.linux-nis.org/download/ypserv/ypserv-%{version}.tar.bz2
@@ -34,6 +34,7 @@ Patch12: ypserv-minuid.patch
 Patch13: ypserv-2.31-map-update.patch
 Patch14: ypserv-2.31-open-correct-db.patch
 Patch15: ypserv-2.31-selinux-context.patch
+Patch16: ypserv-2.19-ypchsh-adjunct.patch
 
 BuildRequires: tokyocabinet-devel
 BuildRequires: systemd
@@ -75,6 +76,7 @@ machines.
 %patch13 -p1 -b .map-update
 %patch14 -p1 -b .open-correct-db
 %patch15 -p1 -b .selinux-context
+%patch16 -p1 -b .ypchsh-adjunct
 
 autoreconf
 
@@ -165,6 +167,10 @@ install -m 755 %{SOURCE4} $RPM_BUILD_ROOT%{_libexecdir}/rpc.yppasswdd.env
 %{_includedir}/*/*
 
 %changelog
+* Thu Jan 31 2019 Petr Kubat <pkubat@redhat.com> - 2.31-12
+- Do not overwrite user password in passwd.adjunct when changing shell
+- Resolves: #1624295
+
 * Fri Apr 20 2018 Petr Kubat <pkubat@redhat.com> - 2.31-11
 - rpc.yppasswd: Only check selinux context if selinux is enabled
   Resolves: #1492892
