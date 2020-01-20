@@ -2,7 +2,7 @@ Summary: The NIS (Network Information Service) server
 Url: http://www.linux-nis.org/nis/ypserv/index.html
 Name: ypserv
 Version: 2.31
-Release: 10%{?dist}
+Release: 11%{?dist}
 License: GPLv2
 Group: System Environment/Daemons
 Source0: http://www.linux-nis.org/download/ypserv/ypserv-%{version}.tar.bz2
@@ -165,6 +165,10 @@ install -m 755 %{SOURCE4} $RPM_BUILD_ROOT%{_libexecdir}/rpc.yppasswdd.env
 %{_includedir}/*/*
 
 %changelog
+* Fri Apr 20 2018 Petr Kubat <pkubat@redhat.com> - 2.31-11
+- rpc.yppasswd: Only check selinux context if selinux is enabled
+  Resolves: #1492892
+
 * Thu Jan 19 2017 Matej Mužila <mmuzila@redhat.com> - 2.31-10
 - rpc.yppasswd: presserve selinux context of shadow and passwd
   Resolves: #1255583

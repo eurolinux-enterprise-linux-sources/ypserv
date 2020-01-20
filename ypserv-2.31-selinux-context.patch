@@ -1,5 +1,3 @@
-If selinux present, presserve selinux context for shadow and passwd file.
-
 --- ypserv-2.31/rpc.yppasswdd/Makefile.am.selinux-context	2016-01-25 15:39:35.038050672 +0100
 +++ ypserv-2.31/rpc.yppasswdd/Makefile.am	2016-01-25 15:39:56.203036632 +0100
 @@ -26,7 +26,7 @@
@@ -40,8 +38,8 @@ If selinux present, presserve selinux context for shadow and passwd file.
  
  AC_CHECK_LIB(xcrypt,crypt,LIBCRYPT="-lxcrypt",LIBCRYPT="")
  if test -z "$LIBCRYPT" ; then
---- ypserv-2.31/rpc.yppasswdd/update.c.selinux_context	2013-04-10 16:42:51.000000000 +0200
-+++ ypserv-2.31/rpc.yppasswdd/update.c	2016-01-25 17:34:15.292146053 +0100
+--- ypserv-2.31/rpc.yppasswdd/update.c.selinux-context	2013-04-10 16:42:51.000000000 +0200
++++ ypserv-2.31/rpc.yppasswdd/update.c	2018-01-09 08:49:08.165461843 +0100
 @@ -42,6 +42,9 @@
  #ifdef HAVE_SHADOW_H
  #include <shadow.h>
@@ -52,7 +50,7 @@ If selinux present, presserve selinux context for shadow and passwd file.
  #include "compat.h"
  
  #ifndef CHECKROOT
-@@ -448,6 +451,9 @@ update_files (yppasswd *yppw, char *logb
+@@ -448,6 +451,9 @@
    FILE *oldpf = NULL, *newpf = NULL, *oldsf = NULL, *newsf = NULL;
    struct stat passwd_stat, shadow_stat;
    char *rootpass = "x";
@@ -62,7 +60,7 @@ If selinux present, presserve selinux context for shadow and passwd file.
  
  #if CHECKROOT
    if ((pw = getpwnam ("root")) != NULL)
-@@ -489,6 +495,7 @@ update_files (yppasswd *yppw, char *logb
+@@ -489,6 +495,7 @@
        return 1;
      }
  
@@ -70,7 +68,7 @@ If selinux present, presserve selinux context for shadow and passwd file.
    /* Open a temp passwd file */
    if ((newpf = fopen (path_passwd_tmp, "w+")) == NULL)
      {
-@@ -497,6 +504,7 @@ update_files (yppasswd *yppw, char *logb
+@@ -497,6 +504,7 @@
        fclose (oldpf);
        return 1;
      }
@@ -78,37 +76,40 @@ If selinux present, presserve selinux context for shadow and passwd file.
    chmod (path_passwd_tmp, passwd_stat.st_mode);
    if (chown (path_passwd_tmp, passwd_stat.st_uid, passwd_stat.st_gid) == -1)
      {
-@@ -507,42 +515,98 @@ update_files (yppasswd *yppw, char *logb
+@@ -507,42 +515,104 @@
        return 1;
      }
  
 +#ifdef WITH_SELINUX
-+  /* Get selinux context of the original file */
-+  if (getfilecon_raw(path_passwd, &pSelCon) < 0)
++  if (is_selinux_enabled() == 1)
 +    {
-+      log_msg ("%s failed", logbuf);
-+      log_msg ("Can't get selinux context %s: %m", path_passwd);
-+      freecon(pSelCon);
-+      fclose (oldpf);
-+      fclose (newpf);
-+      unlink (path_passwd_tmp);
-+      return 1;
-+    }
++      /* Get selinux context of the original file */
++      if (getfilecon_raw(path_passwd, &pSelCon) < 0)
++        {
++          log_msg ("%s failed", logbuf);
++          log_msg ("Can't get selinux context %s: %m", path_passwd);
++          freecon(pSelCon);
++          fclose (oldpf);
++          fclose (newpf);
++          unlink (path_passwd_tmp);
++          return 1;
++        }
 +
-+  /* Set selinux context for tmp file */
-+  if (setfilecon_raw(path_passwd_tmp, pSelCon))
-+    {
-+      log_msg ("%s failed", logbuf);
-+      log_msg ("Can't set selinux context %s: %m", path_passwd_tmp);
++      /* Set selinux context for tmp file */
++      if (setfilecon_raw(path_passwd_tmp, pSelCon))
++        {
++          log_msg ("%s failed", logbuf);
++          log_msg ("Can't set selinux context %s: %m", path_passwd_tmp);
++          freecon(pSelCon);
++          fclose (oldpf);
++          fclose (newpf);
++          unlink (path_passwd_tmp);
++          return 1;
++        }
 +      freecon(pSelCon);
-+      fclose (oldpf);
-+      fclose (newpf);
-+      unlink (path_passwd_tmp);
-+      return 1;
++      pSelCon=NULL;
 +    }
-+  freecon(pSelCon);
-+  pSelCon=NULL;
-+#endif /* WITH_SELINUX  */
++#    endif /* WITH_SELINUX  */
 +
  #ifdef HAVE_GETSPNAM
    /* Open the shadow file for reading. */
@@ -175,30 +176,33 @@ If selinux present, presserve selinux context for shadow and passwd file.
 +	      return 1;
 +	    }
 +#ifdef WITH_SELINUX
-+      if (getfilecon_raw(path_shadow, &pSelCon) < 0)
-+      {
-+	      log_msg ("%s failed", logbuf);
-+	      log_msg ("Can't get selinux context %s: %m", path_shadow);
++      if (is_selinux_enabled() == 1)
++        {
++          if (getfilecon_raw(path_shadow, &pSelCon) < 0)
++          {
++                  log_msg ("%s failed", logbuf);
++                  log_msg ("Can't get selinux context %s: %m", path_shadow);
++              freecon(pSelCon);
++                  fclose (newsf);
++                  fclose (oldsf);
++                  fclose (newpf);
++                  fclose (oldpf);
++                  return 1;
++          }
++          if (setfilecon_raw(path_shadow_tmp, pSelCon))
++                {
++                  log_msg ("%s failed", logbuf);
++                  log_msg ("Can't set selinux context %s: %m", path_shadow_tmp);
++              freecon(pSelCon);
++                  fclose (newsf);
++                  fclose (oldsf);
++                  fclose (newpf);
++                  fclose (oldpf);
++                  return 1;
++                }
 +          freecon(pSelCon);
-+	      fclose (newsf);
-+	      fclose (oldsf);
-+	      fclose (newpf);
-+	      fclose (oldpf);
-+	      return 1;
-+      }
-+      if (setfilecon_raw(path_shadow_tmp, pSelCon))
-+	    {
-+	      log_msg ("%s failed", logbuf);
-+	      log_msg ("Can't set selinux context %s: %m", path_shadow_tmp);
-+          freecon(pSelCon);
-+	      fclose (newsf);
-+	      fclose (oldsf);
-+	      fclose (newpf);
-+	      fclose (oldpf);
-+	      return 1;
-+	    }
-+      freecon(pSelCon);
-+      pSelCon=NULL;
++          pSelCon=NULL;
++        }
 +#endif /* WITH_SELINUX */
 +
      }
